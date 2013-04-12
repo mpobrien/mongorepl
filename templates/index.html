@@ -1,0 +1,114 @@
+<html>
+    <head>
+        <script type="text/javascript">
+            print = function(){
+                if(typeof jqconsole != 'undefined'){
+                    for(var i=0;i<arguments.length;i++){
+                        jqconsole.Write(arguments[i], 'jqconsole-output');
+                        if(i != arguments.length - 1){
+                            jqconsole.Write(' ', 'jqconsole-output');
+                        }
+                    }
+                    jqconsole.Write('\n', 'jqconsole-output');
+                }
+            }
+        </script>
+        <script type="text/javascript" src="/static/jquery-1.7.min.js"></script>
+        <script type="text/javascript" src="/static/jqconsole.js"></script>
+        <link href="/static/ansi.css" rel="stylesheet" />
+        <link href="/static/jq.css" rel="stylesheet" />
+        <!--
+        <script type="text/javascript" src="static/objectid.js"></script>
+        <script type="text/javascript" src="static/js/lib/collection.js"></script>
+        <script type="text/javascript" src="static/js/constants.js"></script>
+        <script type="text/javascript" src="static/js/connection.js"></script>
+        <script type="text/javascript" src="static/js/utils.js"></script>
+        <script type="text/javascript" src="static/js/shell_utils.js"></script>
+        -->
+        <script type="text/javascript" src="static/js/tokens.js"></script>
+        <script type="text/javascript" src="static/bm.js"></script>
+        <script type="text/javascript">
+var numBlanks = 0;
+function checkStack(tokens){
+  var commandStack = 0;
+  for(var i=0; i < tokens.length; i++) {
+      var token = tokens[i];
+      if(token.type == 'operator') {
+          if(token.value == '(' || token.value == '{') {
+              commandStack += 1;
+          }
+          else if(token.value == ')' || token.value == '}') {
+              commandStack -= 1;
+          }
+      }
+  }
+  return commandStack;
+}
+function reassembleTokens(tokens){
+    result = '';
+    for(var i=0;i<tokens.length;i++){
+        if(tokens[i].type=='string'){
+            result += JSON.stringify(tokens[i].value)
+        }else{
+            result += tokens[i].value;
+        }
+    }
+    return result;
+}
+
+function processInput(code){
+    tokens = code.tokens();
+    var firstTokenName = tokens[0] ? tokens[0] + '' : null;
+    if(firstTokenName == 'use' || 
+    firstTokenName == 'it'  || 
+    firstTokenName == 'show'){
+        //
+    }else{
+        return window.eval.apply(window,[code]);
+    }
+}
+
+var startPrompt = function () {
+    // Start the prompt with history enabled.
+    jqconsole.Prompt(true, function (input) {
+        try{
+            result = processInput(input);
+            if(result === undefined){
+            }else{
+                console.log(result);
+                jqconsole.Write(result + '\n', 'jqconsole-output');
+            }
+            // Restart the prompt.
+            startPrompt();
+        }catch(e){
+            jqconsole.Write(e + '\n', 'jqconsole-error');
+            startPrompt();
+        }
+    },
+    function(input, callback){
+        var stackLevel = checkStack(input.tokens());
+        if(stackLevel == 0){
+            callback(false);
+            return;
+        }else{
+            if(/\n\n\n$/.test(input)){
+                jqconsole.AbortPrompt();
+                startPrompt();
+                return;
+            }else{
+                callback(0);
+            }
+        }
+    }, true);
+};
+
+$(function () {
+    jqconsole = $('#console').jqconsole('Hi\n', '> ');
+    startPrompt();
+});
+        </script>
+    </head>
+    <body>
+        <div id="console"></div>
+    </body>
+</html>
